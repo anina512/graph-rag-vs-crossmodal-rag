@@ -126,7 +126,7 @@ The system will:
      └────────────────────────┘
 ```
 
-### 📦 Project Structure
+### 📦 Cross-Modal RAG Project Structure
 ```
 cross-modal-rag-implementation/
 │
@@ -348,12 +348,119 @@ GraphRAG supports multiple search strategies; this project uses the two core one
 Global search operates in three stages:
 Map → Knowledge → Reduce
 
-
 #### 🔹 9. Final LLM Response
 Retrieved evidence (local or global) is passed to the generation model.  
 The LLM synthesizes a final answer that:
 - explains ingredient relationships,
 - preserves constraints,
 - and avoids hallucination through grounded evidence.
+
+### 📁 GraphRAG Project Structure
+
+graph_rag_microsoft/
+│
+├── data/                         # Original dataset (CSV / images)
+│
+├── input/                        # Final cleaned + merged recipe text used to build the graph
+│   └── processed_data.csv
+│
+├── prompts/                      # Prompt templates for extraction, summaries, and search
+│
+├── logs/                         # Runtime logs (indexing + query execution)
+│   ├── indexing-engine.log
+│   └── query.log
+│
+├── output/                       # Final GraphRAG artifacts
+│   ├── graph.graphml             # Full knowledge graph
+│   ├── documents.parquet         # Chunked text units
+│   ├── entities.parquet          # Entity nodes
+│   ├── relationships.parquet     # Edges between entities
+│   ├── communities.parquet       # Community node assignments
+│   ├── community_reports.parquet # Summaries of each community
+│   ├── context.json              # Global graph context
+│   └── stats.json                # Pipeline statistics
+│
+├── output/lancedb/               # LanceDB embeddings & indices (LOCAL SEARCH)
+│   ├── default-text_unit-text.lance
+│   ├── default-entity-description.lance
+│   └── default-community-full_context.lance
+│
+├── cache/                        # Temporary intermediate extraction files
+│
+├── process_csv.py                # Converts cleaned CSV → merged recipe text
+├── download_first_200_rows.py    # Sampling tool (optional)
+├── graph_vis.py                  # Visualizes graph.graphml
+├── settings.yaml                 # Full pipeline configuration
+└── .env
+
+
+### 🚀 GraphRAG Setup & Execution Guide
+
+#### 0️. Prepare Dataset
+GraphRAG requires a **single merged text column** for each recipe (title + ingredients + instructions).
+
+If the processed dataset already exists:
+graph_rag_microsoft/input/processed_data.csv
+
+If not, generate it:
+```
+cd graph_rag_microsoft
+python process_csv.py
+```
+
+#### 1. Install Dependencies
+```
+pip install -r requirements.txt
+```
+
+#### 2. Build the Knowledge Graph
+```
+cd graph_rag_microsoft
+python -m graphrag.index
+```
+
+This stage performs:
+text chunking
+embedding creation
+entity & relationship extraction
+graph construction
+community detection
+community report generation
+
+All artifacts will be saved inside: graph_rag_microsoft/output/
+
+#### 3. Run Local Search (Embedding-Based Retrieval)
+```
+python -m graphrag.query --prompt "What dish ideas use spinach and cheese?"
+```
+Results stored in: output/query_results/local_search/
+
+
+#### 4. Run Global Search (Graph-Based Reasoning)
+```
+python -m graphrag.query --prompt "What pasta dishes can I make with tomatoes and basil?" --global
+```
+Results stored in: output/query_results/global_search/
+
+🧠 Search Modes Summary
+Mode	Best For	Example
+Local Search	Short factual questions	"What is ricotta used for?"
+Global Search	Category-level / reasoning questions	"What kinds of pasta pair well with tomato-based sauces?"
+Hybrid	Multi-layered questions	Auto-activated when needed
+
+🔦 Output Artifacts Overview
+After a full indexing run, the following files appear in output/:
+
+Artifact
+graph.graphml	-> Final constructed knowledge graph
+entities.parquet ->	Extracted entity nodes
+relationships.parquet	 -> Edges between entities
+documents.parquet	-> Chunked recipe text
+communities.parquet	-> Community assignments
+community_reports.parquet	-> Summaries of each community
+context.json	-> Global context for answering queries
+stats.json	-> Extraction and indexing statistics
+query_results/	-> Final LLM answers + retrieved evidence
+
 
 ---
