@@ -58,7 +58,7 @@ The system supports **three types of queries**:
 2. **Image-only RAG**  
 3. **Text + Image RAG**
 
-## 🍽️ What This System Can Do
+###  What This System Can Do
 Given a text query like:
 > "vegan pasta with broccoli"
 or an uploaded image like:
@@ -282,4 +282,78 @@ Perfect for personalization.
 - Build a "chat with your pantry" system
 
 ---
+## 🌟 Graph-Rag-Implementation
+### Knowledge-Graph Reasoning for Recipe Understanding & Retrieval
 
+This module implements **Microsoft GraphRAG**, an advanced Retrieval-Augmented Generation (RAG) framework that enhances retrieval by constructing a **knowledge graph** from the dataset. Instead of relying only on text embeddings, GraphRAG identifies **entities, relationships, and communities** within recipes and uses this structured representation to generate **more grounded, interpretable responses**.
+
+### 🧠 What GraphRAG Does
+
+Given a user cooking query (e.g., ingredients or recipe questions), GraphRAG:
+1. Converts recipe text into **text chunks**
+2. Extracts **entities and relationships** (e.g., ingredients ↔ recipes)
+3. Builds a **knowledge graph** from the full dataset
+4. Generates **community-level summaries** of recipe clusters
+5. Uses **local and global search pipelines** to answer queries
+6. Produces **LLM-generated responses grounded in graph evidence**
+
+Compared to standard RAG, GraphRAG is particularly effective for:
+- Ingredient-based reasoning  
+- Substitutions & category suggestions  
+- Structured, analytical explanations  
+
+### ⚙️ Full Pipeline Overview
+
+GraphRAG processes the dataset in a series of structured stages to transform raw recipe text into a searchable knowledge graph and then uses it to answer user queries.
+
+#### 🔹 1. Data Ingestion
+Loads the cleaned recipe dataset from `input/` based on the configuration defined in `settings.yaml`. The `merged_text` field is extracted from each row to form the raw textual corpus.
+
+#### 🔹 2. Text Chunking
+Long recipe documents are split into overlapping text windows to preserve semantic continuity.  
+- Chunk size: 500 tokens  
+- Overlap: 75 tokens  
+The result is a uniform set of chunks for downstream embedding and graph extraction.
+
+#### 🔹 3. Text Embedding
+Each chunk is embedded using **Nomic Text Embedding v1.5** and stored in **LanceDB** to enable fast semantic search. These embeddings are used for:
+- Local (standard RAG) retrieval
+- The knowledge graph extraction workflow
+
+#### 🔹 4. Graph Extraction (Entity + Relationship Identification)
+For every chunk, an LLM (Llama-3.1-8B-Instruct) identifies:
+- **Entities** (ingredients, dish names, cooking concepts, etc.)
+- **Relationships** between entities  
+All extracted entities are deduplicated and normalized, and a Python **NetworkX** graph is constructed.
+
+#### 🔹 5. Graph Summarization (Entity Descriptions)
+For each graph node, the LLM aggregates all mentions of that entity across the corpus and generates a **canonical description**. These summaries serve as global-context evidence for retrieval.
+
+#### 🔹 6. Community Detection
+Semantic clusters of related entities are created based on graph modularity.  
+- Cluster size capped for readability  
+Each cluster represents a coherent culinary theme (e.g., tomato-based pastas).
+
+#### 🔹 7. Community Reports
+The LLM generates high-level summaries of each cluster using a map-reduce prompting strategy, producing human-readable descriptions of what each community represents.
+
+#### 🔹 8. Retrieval Pipelines
+GraphRAG supports multiple search strategies; this project uses the two core ones:
+
+| Search Type | Evidence Source | Best For |
+|-------------|----------------|----------|
+| **Local Search** | Embedding similarity using LanceDB | Short factual queries |
+| **Global Search** | Community summaries + graph relationships | Multi-hop & reasoning queries |
+
+Global search operates in three stages:
+Map → Knowledge → Reduce
+
+
+#### 🔹 9. Final LLM Response
+Retrieved evidence (local or global) is passed to the generation model.  
+The LLM synthesizes a final answer that:
+- explains ingredient relationships,
+- preserves constraints,
+- and avoids hallucination through grounded evidence.
+
+---
