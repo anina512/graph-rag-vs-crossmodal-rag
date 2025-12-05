@@ -37,6 +37,8 @@ This project evaluates their **strengths, limitations, and downstream effect on 
   - removal of missing images and empty fields,
   - standardization of ingredient format,
   - deduplication and length filtering.
+ 
+
 
 ---
 
@@ -124,8 +126,6 @@ The system will:
      └────────────────────────┘
 ```
 
----
-
 ### 📦 Project Structure
 ```
 cross-modal-rag-implementation/
@@ -163,8 +163,6 @@ cross-modal-rag-implementation/
 │
 └── README.md
 ```
-
----
 
 ### 🚀 Setup Instructions
 
@@ -226,13 +224,10 @@ Runs:
 ```bash
 python -m src.test_rag_prompt
 ```
-
 Produces:
 - `out/retrieved_evidence.txt`
 - `out/generated_prompt.txt`
 - `out/llm_output.txt`
-
----
 
 ### 🧠 LLM Used
 
@@ -242,8 +237,6 @@ meta-llama/Llama-3.2-3B-Instruct
 ```
 
 To change the model, edit: `src/llm_inference.py`
-
----
 
 ### 🧪 Query Modes Supported
 
@@ -279,8 +272,6 @@ System runs:
 ```
 
 Perfect for personalization.
-
----
 
 ### 🎯 Future Improvements (Optional)
 
